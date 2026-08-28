@@ -6,8 +6,8 @@
   if (!TRIP || !BOOKING) throw new Error("行程数据未加载");
 
   const $ = selector => document.querySelector(selector);
-  const storageKey = "hawaii-trip-public-table-v2";
-  const previousStorageKey = "hawaii-trip-public-table-v1";
+  const storageKey = "hawaii-trip-public-table-v3";
+  const previousStorageKey = "hawaii-trip-public-table-v2";
   const priorityRank = {最高:0, 高:1, 中:2, 低:3};
   const editableFields = ["completion","priority","owner","participantCount","status","deadline","quote"];
   const sharedConfig = globalThis.TRIP_SHARED_STATE_CONFIG || {};
