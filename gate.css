@@ -1,0 +1,120 @@
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  background: #eef6f4;
+  color: #15342f;
+}
+
+* { box-sizing: border-box; }
+
+body.gate-locked {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(56, 178, 172, .22), transparent 38%),
+    radial-gradient(circle at 85% 90%, rgba(14, 116, 144, .16), transparent 34%),
+    #eef6f4;
+}
+
+.gate-card {
+  width: min(100%, 430px);
+  padding: 34px;
+  border: 1px solid rgba(15, 118, 110, .18);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 22px 60px rgba(15, 62, 56, .16);
+}
+
+.gate-mark {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 24px;
+  border-radius: 18px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 25px;
+}
+
+.gate-kicker {
+  margin: 0 0 8px;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.gate-card h1 {
+  margin: 0;
+  font-size: clamp(28px, 7vw, 38px);
+  letter-spacing: -.04em;
+}
+
+.gate-description {
+  margin: 14px 0 24px;
+  color: #4b6762;
+  line-height: 1.65;
+}
+
+.gate-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.gate-form input {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 14px;
+  border: 1px solid #9db8b3;
+  border-radius: 12px;
+  background: #fff;
+  color: #15342f;
+  font: inherit;
+}
+
+.gate-form input:focus {
+  outline: 3px solid rgba(13, 148, 136, .2);
+  border-color: #0d9488;
+}
+
+.gate-form button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #0f766e;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gate-form button:disabled { opacity: .62; cursor: wait; }
+
+.gate-status {
+  min-height: 24px;
+  margin: 14px 0 0;
+  color: #a23a2a;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.gate-status[data-state="busy"] { color: #0f766e; }
+
+.gate-footnote {
+  margin: 18px 0 0;
+  color: #718681;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+@media (max-width: 520px) {
+  .gate-card { padding: 26px 22px; border-radius: 20px; }
+}
