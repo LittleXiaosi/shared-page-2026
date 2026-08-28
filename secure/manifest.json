@@ -10,7 +10,7 @@
     "name": "AES-GCM",
     "length": 256,
     "tagLength": 128,
-    "iv": "_TKv555eKtebGCEf",
+    "iv": "l6lZ2hKdei5bLAF-",
     "additionalData": "hawaii-gate:v1:payload"
   },
   "payload": "secure/payload.bin",
