@@ -6,26 +6,14 @@
   if (!TRIP || !BOOKING) throw new Error("行程数据未加载");
 
   const $ = selector => document.querySelector(selector);
-  const storageKey = "hawaii-trip-public-table-v3";
-  const previousStorageKey = "hawaii-trip-public-table-v2";
+  const storageKey = "hawaii-trip-unified-table-v2";
+  const oldAssignmentStorageKey = "hawaii-trip-assignment-roster-v1";
+  const oldBookingStorageKey = "hawaii-trip-booking-checklist-v1";
   const priorityRank = {最高:0, 高:1, 中:2, 低:3};
-  const editableFields = ["completion","priority","owner","participantCount","status","deadline","quote"];
-  const sharedConfig = globalThis.TRIP_SHARED_STATE_CONFIG || {};
-  const sharedDatabaseUrl = String(sharedConfig.databaseUrl || "").trim().replace(/\/+$/, "").replace(/\.json$/, "");
-  const sharedPath = String(sharedConfig.path || "shared-trip")
-    .split("/").map(part => part.trim()).filter(Boolean).map(encodeURIComponent).join("/");
-  const sharedRootUrl = sharedDatabaseUrl && sharedPath ? `${sharedDatabaseUrl}/${sharedPath}.json` : "";
-  const sharedRowsUrl = sharedDatabaseUrl && sharedPath ? `${sharedDatabaseUrl}/${sharedPath}/rows` : "";
-  const sharedPollInterval = Math.max(2500, Number(sharedConfig.pollIntervalMs) || 4000);
-  const knownRowKeys = new Set(BOOKING.rows.map(row => row.key));
+  const editableFields = ["completion","priority","owner","participantCount","names","status","deadline","quote","reference","notes"];
   let showAllBookings = false;
   let workbookReady = false;
   let budgetReady = false;
-  let sharedState = {};
-  let sharedReady = false;
-  let sharedSignature = "";
-  let sharedSyncPromise = null;
-  const pendingSharedRows = new Map();
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -39,144 +27,29 @@
   }
 
   let workbookState = parseStored(storageKey);
-  if (!Object.keys(workbookState).length) {
-    const previousState = parseStored(previousStorageKey);
-    Object.entries(previousState).forEach(([key,value]) => {
-      workbookState[key] = Object.fromEntries(
-        Object.entries(value || {}).filter(([field]) => !["completion","status"].includes(field))
-      );
-    });
-    persistState();
-  }
+  const oldAssignmentState = parseStored(oldAssignmentStorageKey);
+  const oldBookingState = parseStored(oldBookingStorageKey);
+
+  BOOKING.rows.forEach(row => {
+    const current = workbookState[row.key] || {};
+    const legacyRoster = oldAssignmentState[row.key] || {};
+    const legacyBookingKey = row.legacyKey || row.key;
+    if (!("participantCount" in current) && legacyRoster.count) current.participantCount = legacyRoster.count;
+    if (!("names" in current) && legacyRoster.names) current.names = legacyRoster.names;
+    if (!("completion" in current) && Object.prototype.hasOwnProperty.call(oldBookingState, legacyBookingKey)) {
+      current.completion = oldBookingState[legacyBookingKey] ? "☑ 已完成" : "☐ 未完成";
+    }
+    workbookState[row.key] = current;
+  });
+  persistState();
 
   function persistState() {
     localStorage.setItem(storageKey, JSON.stringify(workbookState));
   }
 
   function rowValue(row, field) {
-    if (sharedReady) {
-      const shared = sharedState[row.key] || {};
-      return Object.prototype.hasOwnProperty.call(shared, field) ? shared[field] : row[field];
-    }
     const state = workbookState[row.key] || {};
     return Object.prototype.hasOwnProperty.call(state, field) ? state[field] : row[field];
-  }
-
-  function setSharedSyncStatus(state, message) {
-    const status = $("#sharedSyncStatus");
-    if (!status) return;
-    status.dataset.state = state;
-    status.textContent = message;
-  }
-
-  function sharedRowUrl(key) {
-    return `${sharedRowsUrl}/${encodeURIComponent(key)}.json`;
-  }
-
-  function cleanSharedRows(value) {
-    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-    return Object.fromEntries(Object.entries(value).flatMap(([key,row]) => {
-      if (!knownRowKeys.has(key) || !row || typeof row !== "object" || Array.isArray(row)) return [];
-      const clean = {};
-      editableFields.forEach(field => {
-        if (Object.prototype.hasOwnProperty.call(row, field)) clean[field] = row[field];
-      });
-      if (typeof row.updatedAt === "string") clean.updatedAt = row.updatedAt;
-      return [[key,clean]];
-    }));
-  }
-
-  function defaultSharedRows() {
-    return Object.fromEntries(BOOKING.rows.map(row => [row.key,Object.fromEntries(
-      editableFields.map(field => [field,row[field] ?? ""])
-    )]));
-  }
-
-  async function firebaseRequest(url, options = {}) {
-    const headers = {...(options.headers || {})};
-    if (options.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
-    const response = await fetch(url, {
-      cache: "no-store",
-      ...options,
-      headers
-    });
-    if (!response.ok) throw new Error(`共享状态服务返回 ${response.status}`);
-    return response.status === 204 ? null : response.json();
-  }
-
-  function renderSharedViews() {
-    renderTaskHub();
-    renderDayNav();
-    renderActiveDay();
-    if (workbookReady) renderWorkbookTable();
-  }
-
-  function queueSharedUpdate(key, patch) {
-    if (!sharedRootUrl || !knownRowKeys.has(key)) return;
-    const updatedPatch = {...(pendingSharedRows.get(key) || {}),...patch,updatedAt:new Date().toISOString()};
-    pendingSharedRows.set(key,updatedPatch);
-    sharedState[key] = {...(sharedState[key] || {}),...updatedPatch};
-    setSharedSyncStatus("syncing","正在保存共享修改…");
-    void syncSharedState();
-  }
-
-  async function flushSharedUpdates() {
-    for (const [key,patch] of [...pendingSharedRows]) {
-      await firebaseRequest(sharedRowUrl(key), {method:"PATCH",body:JSON.stringify(patch)});
-      if (pendingSharedRows.get(key) === patch) pendingSharedRows.delete(key);
-    }
-  }
-
-  async function pullSharedState() {
-    let payload = await firebaseRequest(sharedRootUrl);
-    if (!payload || typeof payload !== "object" || !payload.rows) {
-      const rows = defaultSharedRows();
-      payload = {schemaVersion:1,updatedAt:new Date().toISOString(),rows};
-      await firebaseRequest(sharedRootUrl, {method:"PUT",body:JSON.stringify(payload)});
-    }
-    const nextState = cleanSharedRows(payload.rows);
-    pendingSharedRows.forEach((patch,key) => {
-      nextState[key] = {...(nextState[key] || {}),...(sharedState[key] || {}),...patch};
-    });
-    const nextSignature = JSON.stringify(nextState);
-    const changed = !sharedReady || nextSignature !== sharedSignature;
-    sharedState = nextState;
-    sharedReady = true;
-    sharedSignature = nextSignature;
-    if (changed) renderSharedViews();
-  }
-
-  async function syncSharedState() {
-    if (!sharedRootUrl) return;
-    if (sharedSyncPromise) return sharedSyncPromise;
-    sharedSyncPromise = (async () => {
-      try {
-        if (!sharedReady) setSharedSyncStatus("syncing","正在连接五人共享记录…");
-        await flushSharedUpdates();
-        await pullSharedState();
-        const seconds = Math.round(sharedPollInterval / 1000);
-        setSharedSyncStatus("connected",`共享同步已连接 · 其他人约 ${seconds} 秒内可见`);
-      } catch (error) {
-        console.warn("共享状态同步暂时不可用",error);
-        setSharedSyncStatus("offline","共享同步暂时离线 · 修改已保留，联网后重试");
-      } finally {
-        sharedSyncPromise = null;
-        if (pendingSharedRows.size) setTimeout(() => void syncSharedState(),1200);
-      }
-    })();
-    return sharedSyncPromise;
-  }
-
-  function initializeSharedSync() {
-    if (!sharedRootUrl) {
-      setSharedSyncStatus("local","共享同步未接通 · 当前操作仅保存在本机");
-      return;
-    }
-    void syncSharedState();
-    setInterval(() => void syncSharedState(),sharedPollInterval);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") void syncSharedState();
-    });
   }
 
   function rosterNames(value) {
@@ -235,8 +108,10 @@
   function updateRow(key, field, value) {
     workbookState[key] = {...(workbookState[key] || {}), [field]:value};
     persistState();
-    queueSharedUpdate(key,{[field]:value});
-    renderSharedViews();
+    renderTaskHub();
+    renderDayNav();
+    renderActiveDay();
+    if (workbookReady) renderWorkbookTable();
   }
 
   function renderOverview() {
@@ -455,7 +330,7 @@
         <div class="timeline-label"><h3>当日时间线</h3><span>停车、餐厅和预约均已放入对应节点</span></div>
         <div class="timeline">${renderFlow(day)}</div>
         <details class="route-disclosure" data-route-day="${day.id}">
-          <summary>${day.route.noMap ? "查看交通衔接" : "查看高清路线图与实时导航"}</summary>
+          <summary>${day.route.noMap ? "查看交通衔接" : day.route.liveOnly ? "查看分组路线与实时导航说明" : "查看高清路线图与实时导航"}</summary>
           <div class="map-host"><p class="map-loading">展开后加载该日地图。</p></div>
         </details>
       </div>
@@ -482,32 +357,33 @@
         label:`${day.date} 完整驾车路线`,
         origin:route.origin,waypoints:route.waypoints,dest:route.dest
       }];
+      const secureAssetLoader = typeof globalThis.HAWAII_LOAD_SECURE_ASSET === "function"
+        ? globalThis.HAWAII_LOAD_SECURE_ASSET
+        : null;
       host.innerHTML = maps.map((map,index) => {
-        const assetPath = `maps/${map.img}`;
+        const src = `maps/${encodeURIComponent(map.img)}`;
         return `<section class="map-segment">
           <h4>${escapeHtml(map.label)}</h4>
-          <a class="image-link" data-secure-map-link aria-disabled="true" target="_blank" rel="noopener" title="打开原始高清大图">
-            <img data-secure-map="${escapeHtml(assetPath)}" alt="${escapeHtml(day.date + " " + map.label)}">
+          <a class="image-link" ${secureAssetLoader ? `data-secure-map-link="${index}"` : `href="${src}"`} target="_blank" rel="noopener" title="打开原始高清大图">
+            <img ${secureAssetLoader ? `data-secure-map-image="${index}"` : `src="${src}"`} alt="${escapeHtml(day.date + " " + map.label)}">
           </a>
           <div class="map-actions"><a href="${mapsUrl(map)}" target="_blank" rel="noopener">${escapeHtml(map.btn || (index ? "打开分段导航" : "在 Google Maps 中打开"))}</a></div>
         </section>`;
       }).join("");
-      const assetLoader = globalThis.HAWAII_LOAD_SECURE_ASSET;
-      host.querySelectorAll("[data-secure-map]").forEach(image => {
-        const link = image.closest("[data-secure-map-link]");
-        if (typeof assetLoader !== "function") {
-          image.replaceWith(Object.assign(document.createElement("p"), {className:"map-loading",textContent:"加密地图加载器不可用。"}));
-          return;
-        }
-        assetLoader(image.dataset.secureMap).then(url => {
-          image.src = url;
-          link.href = url;
-          link.removeAttribute("aria-disabled");
-        }).catch(error => {
-          console.warn("加密地图解锁失败", error);
-          image.replaceWith(Object.assign(document.createElement("p"), {className:"map-loading",textContent:"地图解锁失败，请刷新后重试。"}));
+      if (secureAssetLoader) {
+        maps.forEach((map,index) => {
+          secureAssetLoader(`maps/${map.img}`).then(url => {
+            const link = host.querySelector(`[data-secure-map-link="${index}"]`);
+            const image = host.querySelector(`[data-secure-map-image="${index}"]`);
+            if (!link || !image) return;
+            link.href = url;
+            image.src = url;
+          }).catch(() => {
+            const image = host.querySelector(`[data-secure-map-image="${index}"]`);
+            if (image) image.alt = `${day.date} 路线图加载失败，请使用下方实时导航`;
+          });
         });
-      });
+      }
     }
     host.dataset.loaded = "true";
   }
@@ -555,15 +431,15 @@
         <td><b>${escapeHtml(row.item)}</b></td>
         <td><select data-field="owner">${selectOptions(owners,row.owner)}</select></td>
         <td><select data-field="participantCount">${selectOptions(BOOKING.options.participantCount,row.participantCount,"待确认")}</select></td>
-        <td>${escapeHtml(row.names || "—")}</td>
+        <td><input type="text" data-field="names" value="${escapeHtml(row.names)}" placeholder="用顿号分隔姓名"></td>
         <td>${escapeHtml(row.confirmation)}</td>
         <td><select data-field="status">${selectOptions(BOOKING.options.status,row.status)}</select></td>
         <td><input type="date" data-field="deadline" value="${escapeHtml(row.deadline)}"></td>
         <td><input type="text" data-field="quote" value="${escapeHtml(row.quote)}"></td>
-        <td>${escapeHtml(row.reference || "—")}</td>
+        <td><input type="text" data-field="reference" value="${escapeHtml(row.reference)}"></td>
         <td>${safeUrl ? `<a class="cell-link" href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener">打开链接</a>` : "—"}</td>
         <td>${escapeHtml(row.checklist)}</td>
-        <td>${escapeHtml(row.notes || "—")}</td>
+        <td><input type="text" data-field="notes" value="${escapeHtml(row.notes)}"></td>
       </tr>`;
     }).join("") || '<tr><td colspan="16">没有符合筛选条件的事项</td></tr>';
     $("#workbookVisibleCount").textContent = `显示 ${filtered.length} / ${rows.length} 项`;
@@ -665,7 +541,6 @@
   renderTaskHub();
   renderDayNav();
   renderActiveDay();
-  initializeSharedSync();
   if (location.hash === `#${activeDayId}`) {
     requestAnimationFrame(() => $("#dayView").scrollIntoView({block:"start"}));
   }
