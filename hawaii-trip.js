@@ -61,6 +61,13 @@
     });
     localStorage.setItem(reservationSyncKey, "1");
   }
+
+  const tokyoStaySyncKey = "hawaii-trip-tokyo-stay-sync-20260905r2";
+  if (!localStorage.getItem(tokyoStaySyncKey)) {
+    const fields = ["completion","participantCount","names","status","deadline","quote","reference","notes"];
+    fields.forEach(field => delete workbookState["stay-tokyo"]?.[field]);
+    localStorage.setItem(tokyoStaySyncKey, "1");
+  }
   persistState();
 
   function persistState() {
