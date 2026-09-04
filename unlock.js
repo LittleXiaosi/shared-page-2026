@@ -130,7 +130,7 @@
   function loadApplicationScript() {
     return new Promise((resolve, reject) => {
       const script = document.createElement("script");
-      script.src = "hawaii-trip.js?v=20260902g1";
+    script.src = "hawaii-trip.js?v=20260904r6";
       script.onload = resolve;
       script.onerror = () => reject(new Error("网页程序加载失败"));
       document.body.append(script);
@@ -159,7 +159,7 @@
 
     const stylesheet = document.createElement("link");
     stylesheet.rel = "stylesheet";
-    stylesheet.href = "hawaii-trip.css?v=20260902g1";
+    stylesheet.href = "hawaii-trip.css?v=20260904r6";
     document.head.append(stylesheet);
     document.title = payload.title;
     document.body.className = "";

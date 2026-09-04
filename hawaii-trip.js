@@ -41,6 +41,26 @@
     }
     workbookState[row.key] = current;
   });
+
+  // This release contains authoritative supplier confirmations. Clear only the
+  // stale locally editable fields that would otherwise mask those updates.
+  const reservationSyncKey = "hawaii-trip-reservation-sync-20260904r6";
+  if (!localStorage.getItem(reservationSyncKey)) {
+    const authoritativeFields = {
+      "rental-oahu": ["completion","status","deadline","quote","reference","notes"],
+      "helicopter": ["completion","confirmation","status","deadline","quote","reference","notes"],
+      "koolau-distillery": ["completion","status"],
+      "kualoa": ["completion","confirmation","status","deadline","quote","reference","notes"],
+      "marriott-yoga": ["completion","confirmation","status","deadline","notes"],
+      "oahu-bar": ["completion","priority","status","deadline","notes"],
+      "stay-tokyo": ["completion","status"]
+    };
+    Object.entries(authoritativeFields).forEach(([key, fields]) => {
+      if (!workbookState[key]) return;
+      fields.forEach(field => delete workbookState[key][field]);
+    });
+    localStorage.setItem(reservationSyncKey, "1");
+  }
   persistState();
 
   function persistState() {
@@ -58,7 +78,7 @@
 
   function confirmationFor(row) {
     const original = rowValue(row, "confirmation");
-    if (original === "不参加") return original;
+    if (["不参加","已确认","部分确认"].includes(original)) return original;
     const count = Number(rowValue(row, "participantCount") || 0);
     const names = rosterNames(rowValue(row, "names"));
     if (!names.length) return "待填写";
