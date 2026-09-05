@@ -130,7 +130,7 @@
   function loadApplicationScript() {
     return new Promise((resolve, reject) => {
       const script = document.createElement("script");
-    script.src = "hawaii-trip.js?v=20260904r6";
+    script.src = "hawaii-trip.js?v=20260905r4";
       script.onload = resolve;
       script.onerror = () => reject(new Error("网页程序加载失败"));
       document.body.append(script);

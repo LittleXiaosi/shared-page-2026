@@ -68,6 +68,13 @@
     fields.forEach(field => delete workbookState["stay-tokyo"]?.[field]);
     localStorage.setItem(tokyoStaySyncKey, "1");
   }
+  const stayResponsibilitySyncKey = "hawaii-trip-stay-responsibility-20260905r4";
+  if (!localStorage.getItem(stayResponsibilitySyncKey)) {
+    ["stay-oahu", "stay-tokyo"].forEach(key => {
+      ["owner", "names", "confirmation", "status", "notes", "quote"].forEach(field => delete workbookState[key]?.[field]);
+    });
+    localStorage.setItem(stayResponsibilitySyncKey, "1");
+  }
   persistState();
 
   function persistState() {
