@@ -75,6 +75,13 @@
     });
     localStorage.setItem(stayResponsibilitySyncKey, "1");
   }
+  const activityOwnerSyncKey = "hawaii-trip-activity-owners-20260905r5";
+  if (!localStorage.getItem(activityOwnerSyncKey)) {
+    ["koolau-distillery", "tennis", "diamond-head-backup"].forEach(key => {
+      delete workbookState[key]?.owner;
+    });
+    localStorage.setItem(activityOwnerSyncKey, "1");
+  }
   persistState();
 
   function persistState() {
