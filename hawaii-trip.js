@@ -82,6 +82,12 @@
     });
     localStorage.setItem(activityOwnerSyncKey, "1");
   }
+  const diamondConfirmationSyncKey = "hawaii-trip-diamond-confirmed-20260910";
+  if (!localStorage.getItem(diamondConfirmationSyncKey)) {
+    ["completion", "participantCount", "names", "confirmation", "status", "deadline", "quote", "reference", "notes"].forEach(field => delete workbookState["diamond-head-backup"]?.[field]);
+    ["completion", "status", "deadline", "notes"].forEach(field => delete workbookState["surf"]?.[field]);
+    localStorage.setItem(diamondConfirmationSyncKey, "1");
+  }
   persistState();
 
   function persistState() {
