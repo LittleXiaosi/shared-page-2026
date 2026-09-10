@@ -4,15 +4,15 @@
     "name": "PBKDF2",
     "hash": "SHA-256",
     "iterations": 600000,
-    "salt": "Flcidc9tXKyi3_T54OGc1A"
+    "salt": "odo2Udz_SbROw21eGYvngw"
   },
   "cipher": {
     "name": "AES-GCM",
     "length": 256,
     "tagLength": 128,
-    "iv": "7HJs8r4WMOewjzVv",
+    "iv": "_1MhBsXZdwbKuYIS",
     "additionalData": "hawaii-gate:v1:payload"
   },
   "payload": "secure/payload.bin",
-  "assetCount": 17
+  "assetCount": 16
 }
