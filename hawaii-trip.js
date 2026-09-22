@@ -88,6 +88,15 @@
     ["completion", "status", "deadline", "notes"].forEach(field => delete workbookState["surf"]?.[field]);
     localStorage.setItem(diamondConfirmationSyncKey, "1");
   }
+  const kualoaRescheduleSyncKey = "hawaii-trip-kualoa-reschedule-20260922r1";
+  if (!localStorage.getItem(kualoaRescheduleSyncKey)) {
+    ["notes"].forEach(field => delete workbookState["stay-oahu"]?.[field]);
+    ["completion", "status", "deadline", "quote", "reference", "notes"].forEach(field => delete workbookState["rental-oahu"]?.[field]);
+    ["completion", "priority", "confirmation", "status", "deadline", "quote", "reference", "notes"].forEach(field => delete workbookState["rental-oahu-kualoa-time-adjustment"]?.[field]);
+    ["completion", "confirmation", "status", "deadline", "quote", "reference", "notes"].forEach(field => delete workbookState["kualoa"]?.[field]);
+    ["completion", "confirmation", "status", "deadline", "notes"].forEach(field => delete workbookState["marriott-yoga"]?.[field]);
+    localStorage.setItem(kualoaRescheduleSyncKey, "1");
+  }
   persistState();
 
   function persistState() {
