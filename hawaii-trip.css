@@ -68,6 +68,7 @@ a{color:inherit}
 .task-deadline{font-size:10px;font-weight:800;color:var(--orange);background:var(--orange-soft);border-radius:999px;padding:4px 7px;white-space:nowrap}
 .task-row.done .task-deadline{color:var(--green);background:#dff2e5}
 .text-button{margin:14px auto 0;display:block;border:0;background:none;color:var(--teal);font-weight:800;cursor:pointer;padding:5px 12px}
+.text-button[hidden]{display:none}
 .prep-disclosure{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
 .prep-disclosure>summary{cursor:pointer;display:flex;justify-content:space-between;list-style:none;font-weight:800}
 .prep-disclosure>summary::-webkit-details-marker{display:none}
