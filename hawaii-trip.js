@@ -97,6 +97,13 @@
     ["completion", "confirmation", "status", "deadline", "notes"].forEach(field => delete workbookState["marriott-yoga"]?.[field]);
     localStorage.setItem(kualoaRescheduleSyncKey, "1");
   }
+  const reservationsCompleteSyncKey = "hawaii-trip-reservations-complete-public-20261008-r2";
+  if (!localStorage.getItem(reservationsCompleteSyncKey)) {
+    BOOKING.rows.filter(row => row.taskType === "booking").forEach(row => {
+      ["completion", "confirmation", "status"].forEach(field => delete workbookState[row.key]?.[field]);
+    });
+    localStorage.setItem(reservationsCompleteSyncKey, "1");
+  }
   persistState();
 
   function persistState() {
@@ -208,7 +215,7 @@
     const visible = showAllBookings ? pending : pending.slice(0,6);
     $("#urgentTaskList").innerHTML = visible.length
       ? visible.map(row => taskRowHtml(row)).join("")
-      : '<p class="support-note">当前没有待预约事项。</p>';
+      : '<p class="support-note">所有需要预约的项目均已完成预约。</p>';
     const toggle = $("#toggleAllTasks");
     toggle.hidden = pending.length <= 6;
     toggle.textContent = showAllBookings ? "收起预约列表" : `查看全部 ${pending.length} 项预约`;
