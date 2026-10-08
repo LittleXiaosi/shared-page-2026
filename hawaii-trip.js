@@ -6,9 +6,9 @@
   if (!TRIP || !BOOKING) throw new Error("行程数据未加载");
 
   const $ = selector => document.querySelector(selector);
-  const storageKey = "hawaii-trip-unified-table-v2";
-  const oldAssignmentStorageKey = "hawaii-trip-assignment-roster-v1";
-  const oldBookingStorageKey = "hawaii-trip-booking-checklist-v1";
+  const storageKey = "hawaii-trip-unified-table-v2-public-20261008";
+  const oldAssignmentStorageKey = "hawaii-trip-assignment-roster-v1-public-20261008";
+  const oldBookingStorageKey = "hawaii-trip-booking-checklist-v1-public-20261008";
   const priorityRank = {最高:0, 高:1, 中:2, 低:3};
   const editableFields = ["completion","priority","owner","participantCount","names","status","deadline","quote","reference","notes"];
   let showAllBookings = false;
@@ -44,7 +44,7 @@
 
   // This release contains authoritative supplier confirmations. Clear only the
   // stale locally editable fields that would otherwise mask those updates.
-  const reservationSyncKey = "hawaii-trip-reservation-sync-20260904r6";
+  const reservationSyncKey = "hawaii-trip-reservation-sync-20260904r6-public-20261008";
   if (!localStorage.getItem(reservationSyncKey)) {
     const authoritativeFields = {
       "rental-oahu": ["completion","status","deadline","quote","reference","notes"],
@@ -62,33 +62,33 @@
     localStorage.setItem(reservationSyncKey, "1");
   }
 
-  const tokyoStaySyncKey = "hawaii-trip-tokyo-stay-sync-20260905r3";
+  const tokyoStaySyncKey = "hawaii-trip-tokyo-stay-sync-20260905r3-public-20261008";
   if (!localStorage.getItem(tokyoStaySyncKey)) {
     const fields = ["completion","participantCount","names","status","deadline","quote","reference","notes"];
     fields.forEach(field => delete workbookState["stay-tokyo"]?.[field]);
     localStorage.setItem(tokyoStaySyncKey, "1");
   }
-  const stayResponsibilitySyncKey = "hawaii-trip-stay-responsibility-20260905r4";
+  const stayResponsibilitySyncKey = "hawaii-trip-stay-responsibility-20260905r4-public-20261008";
   if (!localStorage.getItem(stayResponsibilitySyncKey)) {
     ["stay-oahu", "stay-tokyo"].forEach(key => {
       ["owner", "names", "confirmation", "status", "notes", "quote"].forEach(field => delete workbookState[key]?.[field]);
     });
     localStorage.setItem(stayResponsibilitySyncKey, "1");
   }
-  const activityOwnerSyncKey = "hawaii-trip-activity-owners-20260905r5";
+  const activityOwnerSyncKey = "hawaii-trip-activity-owners-20260905r5-public-20261008";
   if (!localStorage.getItem(activityOwnerSyncKey)) {
     ["koolau-distillery", "tennis", "diamond-head-backup"].forEach(key => {
       delete workbookState[key]?.owner;
     });
     localStorage.setItem(activityOwnerSyncKey, "1");
   }
-  const diamondConfirmationSyncKey = "hawaii-trip-diamond-confirmed-20260910";
+  const diamondConfirmationSyncKey = "hawaii-trip-diamond-confirmed-20260910-public-20261008";
   if (!localStorage.getItem(diamondConfirmationSyncKey)) {
     ["completion", "participantCount", "names", "confirmation", "status", "deadline", "quote", "reference", "notes"].forEach(field => delete workbookState["diamond-head-backup"]?.[field]);
     ["completion", "status", "deadline", "notes"].forEach(field => delete workbookState["surf"]?.[field]);
     localStorage.setItem(diamondConfirmationSyncKey, "1");
   }
-  const kualoaRescheduleSyncKey = "hawaii-trip-kualoa-reschedule-20260922r1";
+  const kualoaRescheduleSyncKey = "hawaii-trip-kualoa-reschedule-20260922r1-public-20261008";
   if (!localStorage.getItem(kualoaRescheduleSyncKey)) {
     ["notes"].forEach(field => delete workbookState["stay-oahu"]?.[field]);
     ["completion", "status", "deadline", "quote", "reference", "notes"].forEach(field => delete workbookState["rental-oahu"]?.[field]);
